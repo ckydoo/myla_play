@@ -19,11 +19,7 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _createDB,
-    );
+    return await openDatabase(path, version: 1, onCreate: _createDB);
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -62,11 +58,37 @@ class DatabaseHelper {
   Future<Song> insertSong(Song song) async {
     final db = await database;
     try {
+      // Check if song with same file path already exists
+      final existing = await db.query(
+        'songs',
+        where: 'filePath = ?',
+        whereArgs: [song.filePath],
+        limit: 1,
+      );
+
+      if (existing.isNotEmpty) {
+        // Song already exists, return the existing song with its ID
+        return Song.fromMap(existing.first);
+      }
+
+      // Insert new song
       final id = await db.insert(
         'songs',
         song.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
+        conflictAlgorithm: ConflictAlgorithm.ignore,
       );
+
+      if (id == 0) {
+        // Insert was ignored due to conflict, fetch existing
+        final result = await db.query(
+          'songs',
+          where: 'filePath = ?',
+          whereArgs: [song.filePath],
+          limit: 1,
+        );
+        return Song.fromMap(result.first);
+      }
+
       return song.copyWith(id: id);
     } catch (e) {
       print('Error inserting song: $e');
@@ -83,11 +105,7 @@ class DatabaseHelper {
 
   Future<Song?> getSong(int id) async {
     final db = await database;
-    final maps = await db.query(
-      'songs',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final maps = await db.query('songs', where: 'id = ?', whereArgs: [id]);
 
     if (maps.isNotEmpty) {
       return Song.fromMap(maps.first);
@@ -119,11 +137,7 @@ class DatabaseHelper {
 
   Future<int> deleteSong(int id) async {
     final db = await database;
-    return await db.delete(
-      'songs',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('songs', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<int> toggleFavorite(int id, bool isFavorite) async {
@@ -139,6 +153,37 @@ class DatabaseHelper {
   Future<void> clearAllSongs() async {
     final db = await database;
     await db.delete('songs');
+  }
+
+  // Remove duplicates from database
+  Future<int> removeDuplicates() async {
+    final db = await database;
+
+    // Find duplicate file paths
+    final duplicates = await db.rawQuery('''
+      SELECT filePath, MIN(id) as keepId
+      FROM songs
+      GROUP BY filePath
+      HAVING COUNT(*) > 1
+    ''');
+
+    int removedCount = 0;
+
+    for (var dup in duplicates) {
+      final filePath = dup['filePath'] as String;
+      final keepId = dup['keepId'] as int;
+
+      // Delete all duplicates except the one with MIN(id)
+      final deleted = await db.delete(
+        'songs',
+        where: 'filePath = ? AND id != ?',
+        whereArgs: [filePath, keepId],
+      );
+
+      removedCount += deleted;
+    }
+
+    return removedCount;
   }
 
   // PLAYLIST OPERATIONS
@@ -162,11 +207,7 @@ class DatabaseHelper {
 
   Future<Playlist?> getPlaylist(int id) async {
     final db = await database;
-    final maps = await db.query(
-      'playlists',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final maps = await db.query('playlists', where: 'id = ?', whereArgs: [id]);
 
     if (maps.isNotEmpty) {
       return Playlist.fromMap(maps.first);
@@ -187,11 +228,7 @@ class DatabaseHelper {
 
   Future<int> deletePlaylist(int id) async {
     final db = await database;
-    return await db.delete(
-      'playlists',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('playlists', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> close() async {

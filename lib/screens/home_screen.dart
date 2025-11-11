@@ -21,6 +21,7 @@ class HomeScreen extends StatelessWidget {
             tooltip: 'Favorites',
             onPressed: () => Get.to(() => const FavoritesScreen()),
           ),
+
           PopupMenuButton<String>(
             onSelected: (value) async {
               if (value == 'rescan') {
@@ -29,40 +30,54 @@ class HomeScreen extends StatelessWidget {
                 await controller.pickFolderToScan();
               } else if (value == 'pick_files') {
                 await controller.pickAudioFiles();
+              } else if (value == 'clean_duplicates') {
+                // NEW: Clean duplicate songs
+                await controller.cleanDuplicates();
               }
             },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'rescan',
-                child: Row(
-                  children: [
-                    Icon(Icons.refresh),
-                    SizedBox(width: 10),
-                    Text('Rescan Folders'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'pick_folder',
-                child: Row(
-                  children: [
-                    Icon(Icons.folder_open),
-                    SizedBox(width: 10),
-                    Text('Pick Music Folder'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'pick_files',
-                child: Row(
-                  children: [
-                    Icon(Icons.library_music),
-                    SizedBox(width: 10),
-                    Text('Pick Audio Files'),
-                  ],
-                ),
-              ),
-            ],
+            itemBuilder:
+                (context) => [
+                  const PopupMenuItem(
+                    value: 'rescan',
+                    child: Row(
+                      children: [
+                        Icon(Icons.refresh),
+                        SizedBox(width: 10),
+                        Text('Rescan Folders'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'pick_folder',
+                    child: Row(
+                      children: [
+                        Icon(Icons.folder_open),
+                        SizedBox(width: 10),
+                        Text('Pick Music Folder'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'pick_files',
+                    child: Row(
+                      children: [
+                        Icon(Icons.library_music),
+                        SizedBox(width: 10),
+                        Text('Pick Audio Files'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'clean_duplicates',
+                    child: Row(
+                      children: [
+                        Icon(Icons.cleaning_services),
+                        SizedBox(width: 10),
+                        Text('Clean Duplicates'),
+                      ],
+                    ),
+                  ),
+                ],
           ),
         ],
       ),
@@ -106,7 +121,10 @@ class HomeScreen extends StatelessWidget {
                   icon: const Icon(Icons.folder_open),
                   label: const Text('Pick Music Folder'),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -115,7 +133,10 @@ class HomeScreen extends StatelessWidget {
                   icon: const Icon(Icons.library_music),
                   label: const Text('Pick Audio Files'),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -134,7 +155,9 @@ class HomeScreen extends StatelessWidget {
             // Song count header
             Container(
               padding: const EdgeInsets.all(12),
-              color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceVariant.withOpacity(0.5),
               child: Row(
                 children: [
                   const Icon(Icons.library_music, size: 20),
@@ -149,9 +172,7 @@ class HomeScreen extends StatelessWidget {
                     onPressed: () {
                       if (controller.allSongs.isNotEmpty) {
                         controller.toggleShuffle();
-                        controller.playSong(
-                          controller.currentPlaylist.first,
-                        );
+                        controller.playSong(controller.currentPlaylist.first);
                         Get.snackbar(
                           'Shuffle',
                           'Playing all songs in shuffle mode',
@@ -188,38 +209,49 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSongTile(BuildContext context, Song song, MusicPlayerController controller, int index) {
+  Widget _buildSongTile(
+    BuildContext context,
+    Song song,
+    MusicPlayerController controller,
+    int index,
+  ) {
     return Obx(() {
       final isCurrentSong = controller.currentSong.value?.id == song.id;
-      
+
       return InkWell(
         onTap: () => controller.playSong(song),
         child: Container(
           decoration: BoxDecoration(
-            color: isCurrentSong 
-                ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3)
-                : null,
+            color:
+                isCurrentSong
+                    ? Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer.withOpacity(0.3)
+                    : null,
           ),
           child: ListTile(
             leading: CircleAvatar(
               backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              child: isCurrentSong && controller.isPlaying.value
-                  ? const Icon(Icons.equalizer, color: Colors.white)
-                  : Text(
-                      '${index + 1}',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.bold,
+              child:
+                  isCurrentSong && controller.isPlaying.value
+                      ? const Icon(Icons.equalizer, color: Colors.white)
+                      : Text(
+                        '${index + 1}',
+                        style: TextStyle(
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
             ),
             title: Text(
               song.title,
               style: TextStyle(
                 fontWeight: isCurrentSong ? FontWeight.bold : FontWeight.normal,
-                color: isCurrentSong 
-                    ? Theme.of(context).colorScheme.primary 
-                    : null,
+                color:
+                    isCurrentSong
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -239,10 +271,7 @@ class HomeScreen extends StatelessWidget {
                     controller.formatDuration(
                       Duration(milliseconds: song.duration!),
                     ),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],
               ],
@@ -267,38 +296,39 @@ class HomeScreen extends StatelessWidget {
                       // TODO: Implement add to playlist
                     }
                   },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'play',
-                      child: Row(
-                        children: [
-                          Icon(Icons.play_arrow),
-                          SizedBox(width: 10),
-                          Text('Play'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'play_next',
-                      child: Row(
-                        children: [
-                          Icon(Icons.queue_music),
-                          SizedBox(width: 10),
-                          Text('Play next'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'add_to_playlist',
-                      child: Row(
-                        children: [
-                          Icon(Icons.playlist_add),
-                          SizedBox(width: 10),
-                          Text('Add to playlist'),
-                        ],
-                      ),
-                    ),
-                  ],
+                  itemBuilder:
+                      (context) => [
+                        const PopupMenuItem(
+                          value: 'play',
+                          child: Row(
+                            children: [
+                              Icon(Icons.play_arrow),
+                              SizedBox(width: 10),
+                              Text('Play'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'play_next',
+                          child: Row(
+                            children: [
+                              Icon(Icons.queue_music),
+                              SizedBox(width: 10),
+                              Text('Play next'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'add_to_playlist',
+                          child: Row(
+                            children: [
+                              Icon(Icons.playlist_add),
+                              SizedBox(width: 10),
+                              Text('Add to playlist'),
+                            ],
+                          ),
+                        ),
+                      ],
                 ),
               ],
             ),
@@ -308,7 +338,10 @@ class HomeScreen extends StatelessWidget {
     });
   }
 
-  Widget _buildMiniPlayer(BuildContext context, MusicPlayerController controller) {
+  Widget _buildMiniPlayer(
+    BuildContext context,
+    MusicPlayerController controller,
+  ) {
     return Container(
       height: 80,
       decoration: BoxDecoration(
@@ -326,21 +359,25 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           children: [
             // Progress bar
-            Obx(() => LinearProgressIndicator(
-                  value: controller.duration.value.inMilliseconds > 0
-                      ? controller.position.value.inMilliseconds /
-                          controller.duration.value.inMilliseconds
-                      : 0,
-                  minHeight: 2,
-                  backgroundColor: Colors.grey[300],
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).colorScheme.primary,
-                  ),
-                )),
+            Obx(
+              () => LinearProgressIndicator(
+                value:
+                    controller.duration.value.inMilliseconds > 0
+                        ? controller.position.value.inMilliseconds /
+                            controller.duration.value.inMilliseconds
+                        : 0,
+                minHeight: 2,
+                backgroundColor: Colors.grey[300],
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
             Expanded(
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.primaryContainer,
                   child: const Icon(Icons.music_note),
                 ),
                 title: Text(
@@ -360,15 +397,17 @@ class HomeScreen extends StatelessWidget {
                       icon: const Icon(Icons.skip_previous),
                       onPressed: controller.playPrevious,
                     ),
-                    Obx(() => IconButton(
-                          icon: Icon(
-                            controller.isPlaying.value
-                                ? Icons.pause_circle_filled
-                                : Icons.play_circle_filled,
-                            size: 40,
-                          ),
-                          onPressed: controller.togglePlayPause,
-                        )),
+                    Obx(
+                      () => IconButton(
+                        icon: Icon(
+                          controller.isPlaying.value
+                              ? Icons.pause_circle_filled
+                              : Icons.play_circle_filled,
+                          size: 40,
+                        ),
+                        onPressed: controller.togglePlayPause,
+                      ),
+                    ),
                     IconButton(
                       icon: const Icon(Icons.skip_next),
                       onPressed: controller.playNext,
