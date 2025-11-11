@@ -38,7 +38,7 @@ class DatabaseHelper {
         title $textType,
         artist $textType,
         album TEXT,
-        filePath $textType,
+        filePath $textType UNIQUE,
         duration $intType,
         albumArt TEXT,
         addedDate $textType,
@@ -61,13 +61,22 @@ class DatabaseHelper {
   // SONG OPERATIONS
   Future<Song> insertSong(Song song) async {
     final db = await database;
-    final id = await db.insert('songs', song.toMap());
-    return song.copyWith(id: id);
+    try {
+      final id = await db.insert(
+        'songs',
+        song.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      return song.copyWith(id: id);
+    } catch (e) {
+      print('Error inserting song: $e');
+      rethrow;
+    }
   }
 
   Future<List<Song>> getAllSongs() async {
     final db = await database;
-    const orderBy = 'title ASC';
+    const orderBy = 'title COLLATE NOCASE ASC';
     final result = await db.query('songs', orderBy: orderBy);
     return result.map((json) => Song.fromMap(json)).toList();
   }
@@ -93,7 +102,7 @@ class DatabaseHelper {
       'songs',
       where: 'isFavorite = ?',
       whereArgs: [1],
-      orderBy: 'title ASC',
+      orderBy: 'title COLLATE NOCASE ASC',
     );
     return result.map((json) => Song.fromMap(json)).toList();
   }
@@ -125,6 +134,11 @@ class DatabaseHelper {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<void> clearAllSongs() async {
+    final db = await database;
+    await db.delete('songs');
   }
 
   // PLAYLIST OPERATIONS

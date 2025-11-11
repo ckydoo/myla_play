@@ -49,7 +49,7 @@ class PlayerScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.blue.withOpacity(0.3),
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                       blurRadius: 30,
                       spreadRadius: 5,
                     ),
@@ -57,14 +57,7 @@ class PlayerScreen extends StatelessWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
-                  child: song.albumArt != null
-                      ? Image.network(
-                          song.albumArt!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              _buildDefaultArt(),
-                        )
-                      : _buildDefaultArt(),
+                  child: _buildDefaultArt(),
                 ),
               ),
 
@@ -110,11 +103,13 @@ class PlayerScreen extends StatelessWidget {
                 children: [
                   Obx(() => Slider(
                         value: controller.position.value.inSeconds.toDouble(),
-                        max: controller.duration.value.inSeconds.toDouble(),
+                        max: controller.duration.value.inSeconds.toDouble() > 0
+                            ? controller.duration.value.inSeconds.toDouble()
+                            : 1.0,
                         onChanged: (value) {
                           controller.seek(Duration(seconds: value.toInt()));
                         },
-                        activeColor: Colors.blue,
+                        activeColor: Theme.of(context).colorScheme.primary,
                         inactiveColor: Colors.grey[700],
                       )),
                   Padding(
@@ -145,7 +140,7 @@ class PlayerScreen extends StatelessWidget {
                         icon: Icon(
                           Icons.shuffle,
                           color: controller.isShuffleEnabled.value
-                              ? Colors.blue
+                              ? Theme.of(context).colorScheme.primary
                               : Colors.grey[400],
                         ),
                         iconSize: 28,
@@ -166,7 +161,10 @@ class PlayerScreen extends StatelessWidget {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: LinearGradient(
-                            colors: [Colors.blue[400]!, Colors.blue[700]!],
+                            colors: [
+                              Theme.of(context).colorScheme.primary,
+                              Theme.of(context).colorScheme.secondary,
+                            ],
                           ),
                         ),
                         child: IconButton(
@@ -194,9 +192,9 @@ class PlayerScreen extends StatelessWidget {
                     IconData icon = Icons.repeat;
 
                     if (controller.loopMode.value == LoopMode.all) {
-                      color = Colors.blue;
+                      color = Theme.of(context).colorScheme.primary;
                     } else if (controller.loopMode.value == LoopMode.one) {
-                      color = Colors.blue;
+                      color = Theme.of(context).colorScheme.primary;
                       icon = Icons.repeat_one;
                     }
 
@@ -225,14 +223,7 @@ class PlayerScreen extends StatelessWidget {
                     icon: Icon(Icons.playlist_play, color: Colors.grey[400]),
                     iconSize: 30,
                     onPressed: () {
-                      // TODO: Show playlist
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.more_vert, color: Colors.grey[400]),
-                    iconSize: 30,
-                    onPressed: () {
-                      // TODO: Show more options
+                      Get.back();
                     },
                   ),
                 ],
