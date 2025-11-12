@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:myla_play/models/library.dart';
+import 'package:myla_play/models/playlist.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
@@ -23,6 +25,11 @@ class MusicPlayerController extends GetxController {
 
   final Rx<Duration> duration = Duration.zero.obs;
   final Rx<Duration> position = Duration.zero.obs;
+
+  final RxList<Album> albums = <Album>[].obs;
+  final RxList<Artist> artists = <Artist>[].obs;
+  final RxList<Genre> genres = <Genre>[].obs;
+  final RxList<Playlist> playlists = <Playlist>[].obs;
 
   @override
   void onInit() {
@@ -50,6 +57,32 @@ class MusicPlayerController extends GetxController {
     _audioPlayer.positionStream.listen((p) {
       position.value = p;
     });
+  }
+
+  Future<void> loadLibraryViews() async {
+    try {
+      isLoading.value = true;
+
+      final results = await Future.wait([
+        _dbHelper.getAllAlbums(),
+        _dbHelper.getAllArtists(),
+        _dbHelper.getAllGenres(),
+        _dbHelper.getAllPlaylists(),
+      ]);
+
+      albums.value = results[0] as List<Album>;
+      artists.value = results[1] as List<Artist>;
+      genres.value = results[2] as List<Genre>;
+      playlists.value = results[3] as List<Playlist>;
+
+      print(
+        '✅ Library loaded: ${albums.length} albums, ${artists.length} artists',
+      );
+    } catch (e) {
+      print('❌ Error loading library views: $e');
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   // Scan device for audio files using directory scanning
@@ -514,5 +547,71 @@ class MusicPlayerController extends GetxController {
   void onClose() {
     _audioPlayer.dispose();
     super.onClose();
+  }
+
+  // Albums
+  Future<List<Song>> getSongsByAlbum(
+    String albumName,
+    String artistName,
+  ) async {
+    return await _dbHelper.getSongsByAlbum(albumName, artistName);
+  }
+
+  // Artists
+  Future<List<Song>> getSongsByArtist(String artistName) async {
+    return await _dbHelper.getSongsByArtist(artistName);
+  }
+
+  // Genres
+  Future<List<Song>> getSongsByGenre(String genreName) async {
+    return await _dbHelper.getSongsByGenre(genreName);
+  }
+
+  // Playlists
+  Future<List<Song>> getPlaylistSongs(Playlist playlist) async {
+    return await _dbHelper.getPlaylistSongs(playlist);
+  }
+
+  Future<void> createPlaylist(String name, String? description) async {
+    final playlist = Playlist(name: name, description: description);
+    final created = await _dbHelper.createPlaylist(playlist);
+    playlists.add(created);
+
+    Get.snackbar(
+      'Success',
+      'Playlist "${created.name}" created',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  Future<void> updatePlaylist(Playlist playlist) async {
+    await _dbHelper.updatePlaylist(playlist);
+    final index = playlists.indexWhere((p) => p.id == playlist.id);
+    if (index != -1) {
+      playlists[index] = playlist;
+    }
+  }
+
+  Future<void> deletePlaylist(Playlist playlist) async {
+    if (playlist.id != null) {
+      await _dbHelper.deletePlaylist(playlist.id!);
+      playlists.remove(playlist);
+    }
+  }
+
+  Future<void> addSongToPlaylist(Playlist playlist, Song song) async {
+    if (song.id == null || playlist.songIds.contains(song.id)) return;
+
+    final updatedPlaylist = playlist.copyWith(
+      songIds: [...playlist.songIds, song.id!],
+    );
+    await updatePlaylist(updatedPlaylist);
+  }
+
+  Future<void> removeSongFromPlaylist(Playlist playlist, int songId) async {
+    final updatedPlaylist = playlist.copyWith(
+      songIds: playlist.songIds.where((id) => id != songId).toList(),
+    );
+    await updatePlaylist(updatedPlaylist);
   }
 }

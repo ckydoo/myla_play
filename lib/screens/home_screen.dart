@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/music_player_controller.dart';
-import '../models/song.dart';
+import 'package:myla_play/controllers/music_player_controller.dart';
+import 'package:myla_play/models/song.dart';
+import 'package:path/path.dart';
 import 'player_screen.dart';
 import 'favorites_screen.dart';
+import 'albums_screen.dart';
+import 'genres_screen.dart';
+import 'playlists_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -12,201 +16,224 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final MusicPlayerController controller = Get.find();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('MyLa Play'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.favorite),
-            tooltip: 'Favorites',
-            onPressed: () => Get.to(() => const FavoritesScreen()),
-          ),
-
-          PopupMenuButton<String>(
-            onSelected: (value) async {
-              if (value == 'rescan') {
-                await controller.rescanDevice();
-              } else if (value == 'pick_folder') {
-                await controller.pickFolderToScan();
-              } else if (value == 'pick_files') {
-                await controller.pickAudioFiles();
-              } else if (value == 'clean_duplicates') {
-                // NEW: Clean duplicate songs
-                await controller.cleanDuplicates();
-              }
-            },
-            itemBuilder:
-                (context) => [
-                  const PopupMenuItem(
-                    value: 'rescan',
-                    child: Row(
-                      children: [
-                        Icon(Icons.refresh),
-                        SizedBox(width: 10),
-                        Text('Rescan Folders'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'pick_folder',
-                    child: Row(
-                      children: [
-                        Icon(Icons.folder_open),
-                        SizedBox(width: 10),
-                        Text('Pick Music Folder'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'pick_files',
-                    child: Row(
-                      children: [
-                        Icon(Icons.library_music),
-                        SizedBox(width: 10),
-                        Text('Pick Audio Files'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'clean_duplicates',
-                    child: Row(
-                      children: [
-                        Icon(Icons.cleaning_services),
-                        SizedBox(width: 10),
-                        Text('Clean Duplicates'),
-                      ],
-                    ),
-                  ),
-                ],
-          ),
-        ],
-      ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 20),
-                Text('Loading songs...'),
-              ],
+    return DefaultTabController(
+      length: 5,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('MyLa Play'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.favorite),
+              tooltip: 'Favorites',
+              onPressed: () => Get.to(() => const FavoritesScreen()),
             ),
-          );
-        }
-
-        if (controller.allSongs.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.music_off, size: 100, color: Colors.grey[400]),
-                const SizedBox(height: 20),
-                Text(
-                  'No audio files found',
-                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: Text(
-                    'Add music by picking a folder or selecting audio files',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 30),
-                ElevatedButton.icon(
-                  onPressed: () => controller.pickFolderToScan(),
-                  icon: const Icon(Icons.folder_open),
-                  label: const Text('Pick Music Folder'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+            PopupMenuButton<String>(
+              onSelected: (value) async {
+                if (value == 'rescan') {
+                  await controller.rescanDevice();
+                } else if (value == 'pick_folder') {
+                  await controller.pickFolderToScan();
+                } else if (value == 'pick_files') {
+                  await controller.pickAudioFiles();
+                } else if (value == 'clean_duplicates') {
+                  await controller.cleanDuplicates();
+                }
+              },
+              itemBuilder:
+                  (context) => [
+                    const PopupMenuItem(
+                      value: 'rescan',
+                      child: Row(
+                        children: [
+                          Icon(Icons.refresh),
+                          SizedBox(width: 10),
+                          Text('Rescan Folders'),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () => controller.pickAudioFiles(),
-                  icon: const Icon(Icons.library_music),
-                  label: const Text('Pick Audio Files'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+                    const PopupMenuItem(
+                      value: 'pick_folder',
+                      child: Row(
+                        children: [
+                          Icon(Icons.folder_open),
+                          SizedBox(width: 10),
+                          Text('Pick Music Folder'),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextButton.icon(
-                  onPressed: () => controller.rescanDevice(),
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Auto-Scan Common Folders'),
-                ),
-              ],
+                    const PopupMenuItem(
+                      value: 'pick_files',
+                      child: Row(
+                        children: [
+                          Icon(Icons.library_music),
+                          SizedBox(width: 10),
+                          Text('Pick Audio Files'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'clean_duplicates',
+                      child: Row(
+                        children: [
+                          Icon(Icons.cleaning_services),
+                          SizedBox(width: 10),
+                          Text('Clean Duplicates'),
+                        ],
+                      ),
+                    ),
+                  ],
             ),
-          );
-        }
-
-        return Column(
-          children: [
-            // Song count header
-            Container(
-              padding: const EdgeInsets.all(12),
-              color: Theme.of(
-                context,
-              ).colorScheme.surfaceVariant.withOpacity(0.5),
-              child: Row(
-                children: [
-                  const Icon(Icons.library_music, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${controller.allSongs.length} Songs',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.shuffle),
-                    onPressed: () {
-                      if (controller.allSongs.isNotEmpty) {
-                        controller.toggleShuffle();
-                        controller.playSong(controller.currentPlaylist.first);
-                        Get.snackbar(
-                          'Shuffle',
-                          'Playing all songs in shuffle mode',
-                          snackPosition: SnackPosition.BOTTOM,
-                          duration: const Duration(seconds: 2),
-                        );
-                      }
-                    },
-                    tooltip: 'Shuffle all',
-                  ),
-                ],
-              ),
-            ),
-            // Songs list
-            Expanded(
-              child: ListView.builder(
-                itemCount: controller.allSongs.length,
-                itemBuilder: (context, index) {
-                  final song = controller.allSongs[index];
-                  return _buildSongTile(context, song, controller, index);
-                },
-              ),
-            ),
-            // Mini Player
-            Obx(() {
-              if (controller.currentSong.value == null) {
-                return const SizedBox.shrink();
-              }
-              return _buildMiniPlayer(context, controller);
-            }),
           ],
-        );
-      }),
+          bottom: const TabBar(
+            isScrollable: true,
+            tabs: [
+              Tab(icon: Icon(Icons.music_note), text: 'Songs'),
+              Tab(icon: Icon(Icons.album), text: 'Albums'),
+              Tab(icon: Icon(Icons.person), text: 'Artists'),
+              Tab(icon: Icon(Icons.style), text: 'Genres'),
+              Tab(icon: Icon(Icons.queue_music), text: 'Playlists'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildSongsTab(controller),
+            const AlbumsScreen(),
+            const ArtistsScreen(),
+            const GenresScreen(),
+            const PlaylistsScreen(),
+          ],
+        ),
+      ),
     );
+  }
+
+  Widget _buildSongsTab(MusicPlayerController controller) {
+    return Obx(() {
+      if (controller.isLoading.value) {
+        return const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 20),
+              Text('Loading songs...'),
+            ],
+          ),
+        );
+      }
+
+      if (controller.allSongs.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.music_off, size: 100, color: Colors.grey[400]),
+              const SizedBox(height: 20),
+              Text(
+                'No audio files found',
+                style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  'Add music by picking a folder or selecting audio files',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton.icon(
+                onPressed: () => controller.pickFolderToScan(),
+                icon: const Icon(Icons.folder_open),
+                label: const Text('Pick Music Folder'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => controller.pickAudioFiles(),
+                icon: const Icon(Icons.library_music),
+                label: const Text('Pick Audio Files'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: () => controller.rescanDevice(),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Auto-Scan Common Folders'),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return Column(
+        children: [
+          // Song count header
+          Container(
+            padding: const EdgeInsets.all(12),
+            color: Theme.of(
+              Get.context!,
+            ).colorScheme.surfaceVariant.withOpacity(0.5),
+            child: Row(
+              children: [
+                const Icon(Icons.library_music, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  '${controller.allSongs.length} Songs',
+                  style: Theme.of(Get.context!).textTheme.titleMedium,
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.shuffle),
+                  onPressed: () {
+                    if (controller.allSongs.isNotEmpty) {
+                      controller.toggleShuffle();
+                      controller.playSong(controller.currentPlaylist.first);
+                      Get.snackbar(
+                        'Shuffle',
+                        'Playing all songs in shuffle mode',
+                        snackPosition: SnackPosition.BOTTOM,
+                        duration: const Duration(seconds: 2),
+                      );
+                    }
+                  },
+                  tooltip: 'Shuffle all',
+                ),
+              ],
+            ),
+          ),
+          // Songs list
+          Expanded(
+            child: ListView.builder(
+              itemCount: controller.allSongs.length,
+              itemBuilder: (context, index) {
+                final song = controller.allSongs[index];
+                return _buildSongTile(context, song, controller, index);
+              },
+            ),
+          ),
+          // Mini Player
+          Obx(() {
+            if (controller.currentSong.value == null) {
+              return const SizedBox.shrink();
+            }
+            return _buildMiniPlayer(context, controller);
+          }),
+        ],
+      );
+    });
   }
 
   Widget _buildSongTile(
@@ -290,10 +317,8 @@ class HomeScreen extends StatelessWidget {
                   onSelected: (value) {
                     if (value == 'play') {
                       controller.playSong(song);
-                    } else if (value == 'play_next') {
-                      // TODO: Implement play next
                     } else if (value == 'add_to_playlist') {
-                      // TODO: Implement add to playlist
+                      _showAddToPlaylistDialog(context, song, controller);
                     }
                   },
                   itemBuilder:
@@ -305,16 +330,6 @@ class HomeScreen extends StatelessWidget {
                               Icon(Icons.play_arrow),
                               SizedBox(width: 10),
                               Text('Play'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'play_next',
-                          child: Row(
-                            children: [
-                              Icon(Icons.queue_music),
-                              SizedBox(width: 10),
-                              Text('Play next'),
                             ],
                           ),
                         ),
@@ -419,6 +434,51 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _showAddToPlaylistDialog(
+    BuildContext context,
+    Song song,
+    MusicPlayerController controller,
+  ) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Add to Playlist'),
+            content: Obx(() {
+              if (controller.playlists.isEmpty) {
+                return const Text('No playlists available. Create one first!');
+              }
+
+              return SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: controller.playlists.length,
+                  itemBuilder: (context, index) {
+                    final playlist = controller.playlists[index];
+                    return ListTile(
+                      leading: const Icon(Icons.queue_music),
+                      title: Text(playlist.name),
+                      subtitle: Text('${playlist.songIds.length} songs'),
+                      onTap: () {
+                        controller.addSongToPlaylist(playlist, song);
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              );
+            }),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            ],
+          ),
     );
   }
 }

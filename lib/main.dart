@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'controllers/music_player_controller.dart';
-import 'screens/home_screen.dart';
+import 'package:myla_play/controllers/music_player_controller.dart';
+import 'package:myla_play/screens/home_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,10 +19,7 @@ class MusicPlayerApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 2,
-        ),
+        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 2),
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
@@ -55,14 +52,17 @@ class _AppInitializerState extends State<AppInitializer> {
   Future<void> _initializeApp() async {
     // Initialize the MusicPlayerController
     Get.put(MusicPlayerController());
-    
+
     // Load existing songs from database (no permission needed)
     final controller = Get.find<MusicPlayerController>();
     await controller.loadSongs();
-    
+
+    // NEW: Load library views (Albums, Artists, Genres, Playlists)
+    await controller.loadLibraryViews();
+
     // Small delay to ensure Activity is ready
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     // Try to auto-scan only if no songs exist
     if (controller.allSongs.isEmpty) {
       await controller.scanDeviceForAudio();
