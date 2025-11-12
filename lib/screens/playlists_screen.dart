@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:myla_play/models/playlist.dart';
+import 'package:myla_play/screens/playlist_details_screen.dart';
 import '../controllers/music_player_controller.dart';
 import 'create_playlist_dialog.dart';
 

@@ -89,7 +89,7 @@ class HomeScreen extends StatelessWidget {
             tabs: [
               Tab(icon: Icon(Icons.music_note), text: 'Songs'),
               Tab(icon: Icon(Icons.album), text: 'Albums'),
-              Tab(icon: Icon(Icons.person), text: 'Artists'),
+              // Tab(icon: Icon(Icons.person), text: 'Artists'),
               Tab(icon: Icon(Icons.style), text: 'Genres'),
               Tab(icon: Icon(Icons.queue_music), text: 'Playlists'),
             ],
@@ -99,7 +99,7 @@ class HomeScreen extends StatelessWidget {
           children: [
             _buildSongsTab(controller),
             const AlbumsScreen(),
-            const ArtistsScreen(),
+            // const ArtistsScreen(),
             const GenresScreen(),
             const PlaylistsScreen(),
           ],
@@ -229,7 +229,7 @@ class HomeScreen extends StatelessWidget {
             if (controller.currentSong.value == null) {
               return const SizedBox.shrink();
             }
-            return _buildMiniPlayer(context, controller);
+            return _buildMiniPlayer(context as BuildContext, controller);
           }),
         ],
       );

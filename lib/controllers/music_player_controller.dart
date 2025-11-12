@@ -614,4 +614,29 @@ class MusicPlayerController extends GetxController {
     );
     await updatePlaylist(updatedPlaylist);
   }
+
+  /// Reorder songs in a playlist
+  Future<void> reorderPlaylistSongs(
+    Playlist playlist,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    try {
+      final songIds = List<int>.from(playlist.songIds);
+
+      // Adjust newIndex if necessary
+      if (newIndex > oldIndex) {
+        newIndex -= 1;
+      }
+
+      final item = songIds.removeAt(oldIndex);
+      songIds.insert(newIndex, item);
+
+      final updatedPlaylist = playlist.copyWith(songIds: songIds);
+      await updatePlaylist(updatedPlaylist);
+    } catch (e) {
+      print('Error reordering playlist songs: $e');
+      Get.snackbar('Error', 'Failed to reorder songs: $e');
+    }
+  }
 }

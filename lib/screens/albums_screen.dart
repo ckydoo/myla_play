@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:myla_play/models/library.dart';
+import 'package:myla_play/screens/album_detail_screen.dart';
 import 'package:myla_play/screens/artist_detail_screen.dart';
 import '../controllers/music_player_controller.dart';
 

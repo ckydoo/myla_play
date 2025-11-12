@@ -4,10 +4,10 @@ import 'package:myla_play/models/library.dart';
 import 'package:myla_play/models/song.dart';
 import '../controllers/music_player_controller.dart';
 
-class AlbumDetailScreen extends StatelessWidget {
-  final Album album;
+class ArtistDetailScreen extends StatelessWidget {
+  final Artist artist;
 
-  const AlbumDetailScreen({super.key, required this.album});
+  const ArtistDetailScreen({super.key, required this.artist});
 
   @override
   Widget build(BuildContext context) {
@@ -16,13 +16,13 @@ class AlbumDetailScreen extends StatelessWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // Album header
+          // Artist header
           SliverAppBar(
-            expandedHeight: 300,
+            expandedHeight: 250,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
-                album.displayName,
+                artist.displayName,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   shadows: [
@@ -34,65 +34,41 @@ class AlbumDetailScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  album.albumArt != null
-                      ? Image.network(
-                        album.albumArt!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildDefaultArt(),
-                      )
-                      : _buildDefaultArt(),
-                  // Gradient overlay
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.7),
-                        ],
-                      ),
-                    ),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.secondary,
+                    ],
                   ),
-                ],
+                ),
+                child: const Center(
+                  child: Icon(Icons.person, size: 100, color: Colors.white54),
+                ),
               ),
             ),
           ),
-          // Album info
+          // Artist info
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    album.artist,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Text(
-                        '${album.songCount} ${album.songCount == 1 ? 'song' : 'songs'}',
+                        '${artist.albumCount} ${artist.albumCount == 1 ? 'album' : 'albums'}',
                         style: TextStyle(color: Colors.grey[600]),
                       ),
-                      if (album.year != null) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          '• ${album.year}',
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ],
-                      if (album.totalDuration != null) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          '• ${controller.formatDuration(Duration(milliseconds: album.totalDuration!))}',
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ],
+                      const SizedBox(width: 8),
+                      Text(
+                        '• ${artist.songCount} ${artist.songCount == 1 ? 'song' : 'songs'}',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -101,23 +77,21 @@ class AlbumDetailScreen extends StatelessWidget {
                     children: [
                       ElevatedButton.icon(
                         onPressed: () async {
-                          final songs = await controller.getSongsByAlbum(
-                            album.name,
-                            album.artist,
+                          final songs = await controller.getSongsByArtist(
+                            artist.name,
                           );
                           if (songs.isNotEmpty) {
                             controller.playSong(songs.first, playlist: songs);
                           }
                         },
                         icon: const Icon(Icons.play_arrow),
-                        label: const Text('Play'),
+                        label: const Text('Play All'),
                       ),
                       const SizedBox(width: 12),
                       OutlinedButton.icon(
                         onPressed: () async {
-                          final songs = await controller.getSongsByAlbum(
-                            album.name,
-                            album.artist,
+                          final songs = await controller.getSongsByArtist(
+                            artist.name,
                           );
                           if (songs.isNotEmpty) {
                             controller.isShuffleEnabled.value = true;
@@ -134,10 +108,10 @@ class AlbumDetailScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Song list
+          // Songs grouped by album
           SliverToBoxAdapter(
             child: FutureBuilder<List<Song>>(
-              future: controller.getSongsByAlbum(album.name, album.artist),
+              future: controller.getSongsByArtist(artist.name),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
@@ -158,16 +132,36 @@ class AlbumDetailScreen extends StatelessWidget {
                 }
 
                 final songs = snapshot.data!;
+                final songsByAlbum = _groupSongsByAlbum(songs);
+
                 return ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: songs.length,
+                  itemCount: songsByAlbum.length,
                   itemBuilder: (context, index) {
-                    return _buildSongTile(
-                      context,
-                      songs[index],
-                      songs,
-                      controller,
+                    final albumName = songsByAlbum.keys.elementAt(index);
+                    final albumSongs = songsByAlbum[albumName]!;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                          child: Text(
+                            albumName.isEmpty ? 'Unknown Album' : albumName,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        ...albumSongs.map((song) {
+                          return _buildSongTile(
+                            context,
+                            song,
+                            songs,
+                            controller,
+                          );
+                        }),
+                      ],
                     );
                   },
                 );
@@ -179,10 +173,19 @@ class AlbumDetailScreen extends StatelessWidget {
     );
   }
 
+  Map<String, List<Song>> _groupSongsByAlbum(List<Song> songs) {
+    final Map<String, List<Song>> grouped = {};
+    for (var song in songs) {
+      final albumName = song.album ?? '';
+      grouped.putIfAbsent(albumName, () => []).add(song);
+    }
+    return grouped;
+  }
+
   Widget _buildSongTile(
     BuildContext context,
     Song song,
-    List<Song> albumSongs,
+    List<Song> allSongs,
     MusicPlayerController controller,
   ) {
     return Obx(() {
@@ -227,17 +230,8 @@ class AlbumDetailScreen extends StatelessWidget {
           ),
           onPressed: () => controller.toggleFavorite(song),
         ),
-        onTap: () => controller.playSong(song, playlist: albumSongs),
+        onTap: () => controller.playSong(song, playlist: allSongs),
       );
     });
-  }
-
-  Widget _buildDefaultArt() {
-    return Container(
-      color: Colors.grey[800],
-      child: const Center(
-        child: Icon(Icons.album, size: 100, color: Colors.white54),
-      ),
-    );
   }
 }
