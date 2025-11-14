@@ -102,7 +102,13 @@ class DatabaseHelper {
         isCustom $intType DEFAULT 0
       )
     ''');
-
+    await db.execute('''
+  CREATE TABLE IF NOT EXISTS recent_searches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    query TEXT NOT NULL UNIQUE,
+    searchDate TEXT NOT NULL
+  )
+''');
     // Insert default EQ presets
     for (var preset in EqualizerPreset.standardPresets) {
       await db.insert('equalizer_presets', preset.toMap());
@@ -445,5 +451,29 @@ class DatabaseHelper {
   Future<void> close() async {
     final db = await database;
     db.close();
+  }
+
+  // Methods
+  Future<void> addRecentSearch(String query) async {
+    final db = await database;
+    await db.insert('recent_searches', {
+      'query': query,
+      'searchDate': DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<List<String>> getRecentSearches({int limit = 10}) async {
+    final db = await database;
+    final result = await db.query(
+      'recent_searches',
+      orderBy: 'searchDate DESC',
+      limit: limit,
+    );
+    return result.map((row) => row['query'] as String).toList();
+  }
+
+  Future<void> clearRecentSearches() async {
+    final db = await database;
+    await db.delete('recent_searches');
   }
 }

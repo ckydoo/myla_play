@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import 'package:myla_play/controllers/music_player_controller.dart';
 import 'package:myla_play/models/song.dart';
 import 'package:myla_play/screens/artist_screen.dart';
+import 'package:myla_play/screens/music_search_delegate.dart';
+import 'package:myla_play/screens/queue_screen.dart';
+import 'package:myla_play/screens/settings_screen.dart';
 import 'package:path/path.dart';
 import 'player_screen.dart';
 import 'favorites_screen.dart';
@@ -24,13 +27,32 @@ class HomeScreen extends StatelessWidget {
           title: const Text('MyLa Play'),
           actions: [
             IconButton(
+              // NEW
+              icon: const Icon(Icons.search),
+              tooltip: 'Search',
+              onPressed: () {
+                showSearch(
+                  context: context,
+                  delegate: MusicSearchDelegate(controller),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.queue_music),
+              tooltip: 'Queue',
+              onPressed: () => Get.to(() => const QueueScreen()),
+            ),
+            IconButton(
               icon: const Icon(Icons.favorite),
               tooltip: 'Favorites',
               onPressed: () => Get.to(() => const FavoritesScreen()),
             ),
             PopupMenuButton<String>(
               onSelected: (value) async {
-                if (value == 'rescan') {
+                if (value == 'settings') {
+                  // NEW
+                  Get.to(() => const SettingsScreen());
+                } else if (value == 'rescan') {
                   await controller.rescanDevice();
                 } else if (value == 'pick_folder') {
                   await controller.pickFolderToScan();
@@ -42,6 +64,16 @@ class HomeScreen extends StatelessWidget {
               },
               itemBuilder:
                   (context) => [
+                    const PopupMenuItem(
+                      value: 'settings',
+                      child: Row(
+                        children: [
+                          Icon(Icons.settings),
+                          SizedBox(width: 10),
+                          Text('Settings'),
+                        ],
+                      ),
+                    ),
                     const PopupMenuItem(
                       value: 'rescan',
                       child: Row(
@@ -325,6 +357,24 @@ class HomeScreen extends StatelessWidget {
                   onSelected: (value) {
                     if (value == 'play') {
                       controller.playSong(song);
+                    } else if (value == 'add_to_queue') {
+                      // NEW
+                      if (!controller.currentPlaylist.contains(song)) {
+                        controller.currentPlaylist.add(song);
+                        Get.snackbar(
+                          'Added to Queue',
+                          '"${song.title}" added to queue',
+                          snackPosition: SnackPosition.BOTTOM,
+                          duration: const Duration(seconds: 2),
+                        );
+                      } else {
+                        Get.snackbar(
+                          'Already in Queue',
+                          '"${song.title}" is already in queue',
+                          snackPosition: SnackPosition.BOTTOM,
+                          duration: const Duration(seconds: 2),
+                        );
+                      }
                     } else if (value == 'add_to_playlist') {
                       _showAddToPlaylistDialog(context, song, controller);
                     }
@@ -338,6 +388,17 @@ class HomeScreen extends StatelessWidget {
                               Icon(Icons.play_arrow),
                               SizedBox(width: 10),
                               Text('Play'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          // NEW MENU ITEM
+                          value: 'add_to_queue',
+                          child: Row(
+                            children: [
+                              Icon(Icons.queue_music),
+                              SizedBox(width: 10),
+                              Text('Add to Queue'),
                             ],
                           ),
                         ),

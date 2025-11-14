@@ -40,6 +40,9 @@ dependencies:
   rxdart: ^0.28.0
   reorderable_grid_view: ^2.2.8
 
+  shared_preferences: ^2.2.2
+  package_info_plus: ^9.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

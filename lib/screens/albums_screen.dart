@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:myla_play/models/library.dart';
 import 'package:myla_play/screens/album_detail_screen.dart';
 import 'package:myla_play/screens/artist_detail_screen.dart';
+import 'package:myla_play/screens/music_search_delegate.dart';
 import '../controllers/music_player_controller.dart';
 
 class AlbumsScreen extends StatelessWidget {
@@ -13,7 +14,20 @@ class AlbumsScreen extends StatelessWidget {
     final controller = Get.find<MusicPlayerController>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Albums')),
+      appBar: AppBar(
+        title: const Text('Albums'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              showSearch(
+                context: context,
+                delegate: MusicSearchDelegate(controller),
+              );
+            },
+          ),
+        ],
+      ),
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
