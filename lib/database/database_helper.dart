@@ -239,33 +239,36 @@ class DatabaseHelper {
   Future<List<Album>> getAllAlbums() async {
     final db = await database;
     final result = await db.rawQuery('''
-      SELECT 
-        album,
-        COALESCE(albumArtist, artist) as artist,
-        COUNT(*) as songCount,
-        MIN(year) as year,
-        MIN(albumArt) as albumArt,
-        SUM(duration) as totalDuration,
-        GROUP_CONCAT(id) as songIds
-      FROM songs
-      WHERE album IS NOT NULL AND album != ''
-      GROUP BY album, COALESCE(albumArtist, artist)
-      ORDER BY album COLLATE NOCASE ASC
-    ''');
+    SELECT 
+      album,
+      COALESCE(albumArtist, artist) as artist,
+      COUNT(*) as songCount,
+      MIN(year) as year,
+      MIN(albumArt) as albumArt,
+      SUM(duration) as totalDuration,
+      GROUP_CONCAT(id) as songIds
+    FROM songs
+    WHERE album IS NOT NULL AND album != ''
+    GROUP BY album, COALESCE(albumArtist, artist)
+    ORDER BY album COLLATE NOCASE ASC
+  ''');
 
     return result.map((map) {
+      final albumName = map['album'] as String? ?? 'Unknown Album';
+      final artistName = map['artist'] as String? ?? 'Unknown Artist';
+      final songIdsStr = map['songIds'] as String? ?? '';
+
       return Album(
-        name: map['album'] as String,
-        artist: map['artist'] as String,
-        songCount: map['songCount'] as int,
+        name: albumName,
+        artist: artistName,
+        songCount: map['songCount'] as int? ?? 0,
         year: map['year'] as int?,
         albumArt: map['albumArt'] as String?,
         totalDuration: map['totalDuration'] as int?,
         songIds:
-            (map['songIds'] as String)
-                .split(',')
-                .map((e) => int.parse(e))
-                .toList(),
+            songIdsStr.isNotEmpty
+                ? songIdsStr.split(',').map((e) => int.parse(e)).toList()
+                : [],
       );
     }).toList();
   }
@@ -287,28 +290,31 @@ class DatabaseHelper {
   Future<List<Artist>> getAllArtists() async {
     final db = await database;
     final result = await db.rawQuery('''
-      SELECT 
-        COALESCE(albumArtist, artist) as name,
-        COUNT(*) as songCount,
-        COUNT(DISTINCT album) as albumCount,
-        GROUP_CONCAT(id) as songIds,
-        GROUP_CONCAT(DISTINCT album) as albums
-      FROM songs
-      GROUP BY COALESCE(albumArtist, artist)
-      ORDER BY name COLLATE NOCASE ASC
-    ''');
+    SELECT 
+      COALESCE(albumArtist, artist, 'Unknown Artist') as name,
+      COUNT(*) as songCount,
+      COUNT(DISTINCT album) as albumCount,
+      GROUP_CONCAT(id) as songIds,
+      GROUP_CONCAT(DISTINCT album) as albums
+    FROM songs
+    GROUP BY COALESCE(albumArtist, artist, 'Unknown Artist')
+    ORDER BY name COLLATE NOCASE ASC
+  ''');
 
     return result.map((map) {
+      final artistName = map['name'] as String? ?? 'Unknown Artist';
+      final songIdsStr = map['songIds'] as String? ?? '';
+      final albumsStr = map['albums'] as String? ?? '';
+
       return Artist(
-        name: map['name'] as String,
-        songCount: map['songCount'] as int,
-        albumCount: map['albumCount'] as int,
+        name: artistName,
+        songCount: map['songCount'] as int? ?? 0,
+        albumCount: map['albumCount'] as int? ?? 0,
         songIds:
-            (map['songIds'] as String)
-                .split(',')
-                .map((e) => int.parse(e))
-                .toList(),
-        albums: (map['albums'] as String).split(','),
+            songIdsStr.isNotEmpty
+                ? songIdsStr.split(',').map((e) => int.parse(e)).toList()
+                : [],
+        albums: albumsStr.isNotEmpty ? albumsStr.split(',') : [],
       );
     }).toList();
   }
@@ -327,24 +333,26 @@ class DatabaseHelper {
   Future<List<Genre>> getAllGenres() async {
     final db = await database;
     final result = await db.rawQuery('''
-      SELECT 
-        COALESCE(genre, 'Unknown') as name,
-        COUNT(*) as songCount,
-        GROUP_CONCAT(id) as songIds
-      FROM songs
-      GROUP BY COALESCE(genre, 'Unknown')
-      ORDER BY name COLLATE NOCASE ASC
-    ''');
+    SELECT 
+      COALESCE(genre, 'Unknown') as name,
+      COUNT(*) as songCount,
+      GROUP_CONCAT(id) as songIds
+    FROM songs
+    GROUP BY COALESCE(genre, 'Unknown')
+    ORDER BY name COLLATE NOCASE ASC
+  ''');
 
     return result.map((map) {
+      final genreName = map['name'] as String? ?? 'Unknown';
+      final songIdsStr = map['songIds'] as String? ?? '';
+
       return Genre(
-        name: map['name'] as String,
-        songCount: map['songCount'] as int,
+        name: genreName,
+        songCount: map['songCount'] as int? ?? 0,
         songIds:
-            (map['songIds'] as String)
-                .split(',')
-                .map((e) => int.parse(e))
-                .toList(),
+            songIdsStr.isNotEmpty
+                ? songIdsStr.split(',').map((e) => int.parse(e)).toList()
+                : [],
       );
     }).toList();
   }

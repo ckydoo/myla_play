@@ -18,41 +18,7 @@ class SettingsScreen extends StatelessWidget {
         children: [
           // Playback Section
           _buildSectionHeader('Playback', Icons.play_circle_outline),
-          Obx(
-            () => SwitchListTile(
-              title: const Text('Gapless Playback'),
-              subtitle: const Text('Seamless transitions between songs'),
-              value: settingsController.gaplessPlayback.value,
-              onChanged: settingsController.setGaplessPlayback,
-            ),
-          ),
-          Obx(
-            () => SwitchListTile(
-              title: const Text('Crossfade'),
-              subtitle: const Text('Fade between songs'),
-              value: settingsController.crossfadeEnabled.value,
-              onChanged: settingsController.setCrossfadeEnabled,
-            ),
-          ),
-          Obx(() {
-            if (!settingsController.crossfadeEnabled.value) {
-              return const SizedBox.shrink();
-            }
-            return ListTile(
-              title: const Text('Crossfade Duration'),
-              subtitle: Slider(
-                value: settingsController.crossfadeDuration.value.toDouble(),
-                min: 1,
-                max: 12,
-                divisions: 11,
-                label: '${settingsController.crossfadeDuration.value}s',
-                onChanged: (value) {
-                  settingsController.setCrossfadeDuration(value.toInt());
-                },
-              ),
-              trailing: Text('${settingsController.crossfadeDuration.value}s'),
-            );
-          }),
+
           Obx(
             () => SwitchListTile(
               title: const Text('ReplayGain'),
@@ -112,14 +78,6 @@ class SettingsScreen extends StatelessWidget {
               ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showThemePicker(context, settingsController),
-            ),
-          ),
-          Obx(
-            () => SwitchListTile(
-              title: const Text('Show Album Art'),
-              subtitle: const Text('Display album artwork'),
-              value: settingsController.showAlbumArt.value,
-              onChanged: settingsController.setShowAlbumArt,
             ),
           ),
 
@@ -307,18 +265,6 @@ class SettingsScreen extends StatelessWidget {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () {
-                  controller.resetSettings();
-                  Navigator.pop(context);
-                  Get.snackbar(
-                    'Settings Reset',
-                    'All settings have been restored to default',
-                    snackPosition: SnackPosition.BOTTOM,
-                  );
-                },
-                child: const Text('Reset', style: TextStyle(color: Colors.red)),
               ),
             ],
           ),
