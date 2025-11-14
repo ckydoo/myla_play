@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:myla_play/controllers/music_player_controller.dart';
 import 'package:myla_play/models/song.dart';
+import 'package:myla_play/screens/artist_screen.dart';
 import 'package:path/path.dart';
 import 'player_screen.dart';
 import 'favorites_screen.dart';
@@ -89,7 +90,7 @@ class HomeScreen extends StatelessWidget {
             tabs: [
               Tab(icon: Icon(Icons.music_note), text: 'Songs'),
               Tab(icon: Icon(Icons.album), text: 'Albums'),
-              // Tab(icon: Icon(Icons.person), text: 'Artists'),
+              Tab(icon: Icon(Icons.person), text: 'Artists'),
               Tab(icon: Icon(Icons.style), text: 'Genres'),
               Tab(icon: Icon(Icons.queue_music), text: 'Playlists'),
             ],
@@ -99,7 +100,7 @@ class HomeScreen extends StatelessWidget {
           children: [
             _buildSongsTab(controller),
             const AlbumsScreen(),
-            // const ArtistsScreen(),
+            const ArtistsScreen(),
             const GenresScreen(),
             const PlaylistsScreen(),
           ],
@@ -178,60 +179,67 @@ class HomeScreen extends StatelessWidget {
         );
       }
 
-      return Column(
-        children: [
-          // Song count header
-          Container(
-            padding: const EdgeInsets.all(12),
-            color: Theme.of(
-              Get.context!,
-            ).colorScheme.surfaceVariant.withOpacity(0.5),
-            child: Row(
+      // Use Builder to get a proper BuildContext
+      return Builder(
+        builder:
+            (context) => Column(
               children: [
-                const Icon(Icons.library_music, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  '${controller.allSongs.length} Songs',
-                  style: Theme.of(Get.context!).textTheme.titleMedium,
+                // Song count header
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceVariant.withOpacity(0.5),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.library_music, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${controller.allSongs.length} Songs',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.shuffle),
+                        onPressed: () {
+                          if (controller.allSongs.isNotEmpty) {
+                            controller.toggleShuffle();
+                            controller.playSong(
+                              controller.currentPlaylist.first,
+                            );
+                            Get.snackbar(
+                              'Shuffle',
+                              'Playing all songs in shuffle mode',
+                              snackPosition: SnackPosition.BOTTOM,
+                              duration: const Duration(seconds: 2),
+                            );
+                          }
+                        },
+                        tooltip: 'Shuffle all',
+                      ),
+                    ],
+                  ),
                 ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.shuffle),
-                  onPressed: () {
-                    if (controller.allSongs.isNotEmpty) {
-                      controller.toggleShuffle();
-                      controller.playSong(controller.currentPlaylist.first);
-                      Get.snackbar(
-                        'Shuffle',
-                        'Playing all songs in shuffle mode',
-                        snackPosition: SnackPosition.BOTTOM,
-                        duration: const Duration(seconds: 2),
-                      );
-                    }
-                  },
-                  tooltip: 'Shuffle all',
+                // Songs list
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: controller.allSongs.length,
+                    itemBuilder: (context, index) {
+                      final song = controller.allSongs[index];
+                      return _buildSongTile(context, song, controller, index);
+                    },
+                  ),
                 ),
+                // Mini Player
+                Obx(() {
+                  if (controller.currentSong.value == null) {
+                    return const SizedBox.shrink();
+                  }
+                  // context is already BuildContext, no need to cast
+                  return _buildMiniPlayer(context, controller);
+                }),
               ],
             ),
-          ),
-          // Songs list
-          Expanded(
-            child: ListView.builder(
-              itemCount: controller.allSongs.length,
-              itemBuilder: (context, index) {
-                final song = controller.allSongs[index];
-                return _buildSongTile(context, song, controller, index);
-              },
-            ),
-          ),
-          // Mini Player
-          Obx(() {
-            if (controller.currentSong.value == null) {
-              return const SizedBox.shrink();
-            }
-            return _buildMiniPlayer(context as BuildContext, controller);
-          }),
-        ],
       );
     });
   }

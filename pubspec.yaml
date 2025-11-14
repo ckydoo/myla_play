@@ -38,7 +38,7 @@ dependencies:
   # Utilities
   on_audio_query: ^2.9.0
   rxdart: ^0.28.0
-  reorderable_grid_view: ^6.0.0 
+  reorderable_grid_view: ^2.2.8
 
 dev_dependencies:
   flutter_test:
