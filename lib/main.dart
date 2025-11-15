@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:myla_play/controllers/equalizer_controller.dart';
 import 'package:myla_play/controllers/music_player_controller.dart';
 import 'package:myla_play/controllers/settings_controller.dart';
 import 'package:myla_play/screens/home_screen.dart';
@@ -56,8 +57,9 @@ class _AppInitializerState extends State<AppInitializer> {
 
     // Load existing songs from database (no permission needed)
     final controller = Get.find<MusicPlayerController>();
-    Get.put(SettingsController()); // ADD THIS LINE
-
+    Get.put(SettingsController());
+    // Initialize Equalizer
+    Get.put(EqualizerController());
     await controller.loadSongs();
 
     // NEW: Load library views (Albums, Artists, Genres, Playlists)

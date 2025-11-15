@@ -1,7 +1,9 @@
+import 'package:audio_service/audio_service.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:myla_play/models/library.dart';
 import 'package:myla_play/models/playlist.dart';
+import 'package:myla_play/services/audio_handler.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
@@ -11,7 +13,8 @@ import '../database/database_helper.dart';
 class MusicPlayerController extends GetxController {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
-
+  // Make audio handler accessible
+  late final AudioHandler audioHandler;
   // Observables
   final RxList<Song> allSongs = <Song>[].obs;
   final RxList<Song> currentPlaylist = <Song>[].obs;
@@ -32,30 +35,39 @@ class MusicPlayerController extends GetxController {
   final RxList<Playlist> playlists = <Playlist>[].obs;
 
   @override
-  void onInit() {
+  Future<void> onInit() async {
     super.onInit();
-    _initializePlayer();
+
+    // Get the audio handler (it should be initialized in main.dart)
+    audioHandler = await AudioService.init(
+      builder: () => MyAudioHandler(),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.myla.play.audio',
+        androidNotificationChannelName: 'MyLa Play',
+        androidNotificationOngoing: true,
+      ),
+    );
+
+    _initializeListeners();
+    loadSongs();
   }
 
-  void _initializePlayer() {
-    // Listen to player state changes
-    _audioPlayer.playerStateStream.listen((state) {
+  void _initializeListeners() {
+    // Listen to playback state
+    audioHandler.playbackState.listen((state) {
       isPlaying.value = state.playing;
-
-      // Auto play next song when current song ends
-      if (state.processingState == ProcessingState.completed) {
-        playNext();
-      }
-    });
-
-    // Listen to duration changes
-    _audioPlayer.durationStream.listen((d) {
-      duration.value = d ?? Duration.zero;
     });
 
     // Listen to position changes
-    _audioPlayer.positionStream.listen((p) {
+    AudioService.position.listen((p) {
       position.value = p;
+    });
+
+    // Listen to media item changes
+    audioHandler.mediaItem.listen((item) {
+      if (item != null) {
+        duration.value = item.duration ?? Duration.zero;
+      }
     });
   }
 

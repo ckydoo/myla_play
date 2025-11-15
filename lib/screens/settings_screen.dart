@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:myla_play/controllers/settings_controller.dart';
 import 'package:myla_play/controllers/music_player_controller.dart';
+import 'package:myla_play/screens/equalizer_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -91,11 +92,7 @@ class SettingsScreen extends StatelessWidget {
             subtitle: const Text('Adjust sound frequencies'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Get.snackbar(
-                'Coming Soon',
-                'Equalizer will be available in the next update',
-                snackPosition: SnackPosition.BOTTOM,
-              );
+              Get.to(() => const EqualizerScreen());
             },
           ),
 
