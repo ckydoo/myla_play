@@ -1,6 +1,8 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:myla_play/controllers/gapless_playback_controller.dart';
+import 'package:myla_play/controllers/replay_gain_controller.dart';
 import 'package:myla_play/models/library.dart';
 import 'package:myla_play/models/playlist.dart';
 import 'package:myla_play/services/audio_handler.dart';
@@ -34,6 +36,9 @@ class MusicPlayerController extends GetxController {
   final RxList<Genre> genres = <Genre>[].obs;
   final RxList<Playlist> playlists = <Playlist>[].obs;
 
+  final gaplessController = Get.find<GaplessPlaybackController>();
+  final replayGainController = Get.find<ReplayGainController>();
+
   @override
   Future<void> onInit() async {
     super.onInit();
@@ -50,6 +55,21 @@ class MusicPlayerController extends GetxController {
 
     _initializeListeners();
     loadSongs();
+  }
+
+  // When creating playlist queue
+  Future<void> _createPlaylistQueue() async {
+    if (currentPlaylist.isEmpty) return;
+
+    final filePaths = currentPlaylist.map((s) => s.filePath).toList();
+
+    if (gaplessController.isGaplessEnabled.value) {
+      final playlist = gaplessController.createGaplessPlaylist(filePaths);
+      await _audioPlayer.setAudioSource(playlist);
+    } else {
+      // Regular playlist loading
+      await _audioPlayer.setFilePath(currentSong.value!.filePath);
+    }
   }
 
   void _initializeListeners() {
@@ -455,7 +475,9 @@ class MusicPlayerController extends GetxController {
 
       currentSong.value = song;
       currentIndex.value = currentPlaylist.indexWhere((s) => s.id == song.id);
-
+      final volumeAdjustment = await replayGainController
+          .calculateVolumeAdjustment(song.filePath);
+      await _audioPlayer.setVolume(volumeAdjustment);
       await _audioPlayer.setFilePath(song.filePath);
       await _audioPlayer.play();
     } catch (e) {

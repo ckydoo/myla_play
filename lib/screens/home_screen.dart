@@ -6,6 +6,7 @@ import 'package:myla_play/screens/artist_screen.dart';
 import 'package:myla_play/screens/music_search_delegate.dart';
 import 'package:myla_play/screens/queue_screen.dart';
 import 'package:myla_play/screens/settings_screen.dart';
+import 'package:myla_play/screens/sleep_timer_screen.dart';
 import 'package:path/path.dart';
 import 'player_screen.dart';
 import 'favorites_screen.dart';
@@ -49,8 +50,9 @@ class HomeScreen extends StatelessWidget {
             ),
             PopupMenuButton<String>(
               onSelected: (value) async {
-                if (value == 'settings') {
-                  // NEW
+                if (value == 'sleep_timer') {
+                  Get.to(() => const SleepTimerScreen());
+                } else if (value == 'settings') {
                   Get.to(() => const SettingsScreen());
                 } else if (value == 'rescan') {
                   await controller.rescanDevice();
@@ -64,6 +66,16 @@ class HomeScreen extends StatelessWidget {
               },
               itemBuilder:
                   (context) => [
+                    const PopupMenuItem(
+                      value: 'sleep_timer',
+                      child: Row(
+                        children: [
+                          Icon(Icons.bedtime),
+                          SizedBox(width: 10),
+                          Text('Sleep Timer'),
+                        ],
+                      ),
+                    ),
                     const PopupMenuItem(
                       value: 'settings',
                       child: Row(

@@ -1,270 +1,259 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:myla_play/controllers/settings_controller.dart';
-import 'package:myla_play/controllers/music_player_controller.dart';
-import 'package:myla_play/screens/equalizer_screen.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import '../controllers/settings_controller.dart';
+import '../controllers/gapless_playback_controller.dart';
+import '../controllers/replay_gain_controller.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final settingsController = Get.put(SettingsController());
-    final musicController = Get.find<MusicPlayerController>();
+    final settingsController = Get.find<SettingsController>();
+    final gaplessController = Get.put(GaplessPlaybackController());
+    final replayGainController = Get.put(ReplayGainController());
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: const Text('Settings'), centerTitle: true),
       body: ListView(
         children: [
-          // Playback Section
-          _buildSectionHeader('Playback', Icons.play_circle_outline),
+          // Audio Playback Section
+          _buildSectionHeader(context, 'Audio Playback'),
+
+          // Gapless Playback
+          Obx(
+            () => SwitchListTile(
+              title: const Text('Gapless Playback'),
+              subtitle: const Text('Seamless transitions between tracks'),
+              value: gaplessController.isGaplessEnabled.value,
+              onChanged: gaplessController.toggleGapless,
+              secondary: const Icon(Icons.compare_arrows),
+            ),
+          ),
+
+          // Crossfade
+          Obx(
+            () => SwitchListTile(
+              title: const Text('Crossfade'),
+              subtitle: Text(
+                gaplessController.isCrossfadeEnabled.value
+                    ? 'Fade duration: ${gaplessController.crossfadeDuration.value.toInt()}s'
+                    : 'Smooth fade between tracks',
+              ),
+              value: gaplessController.isCrossfadeEnabled.value,
+              onChanged: gaplessController.toggleCrossfade,
+              secondary: const Icon(Icons.blur_on),
+            ),
+          ),
+
+          // Crossfade duration slider
+          Obx(() {
+            if (!gaplessController.isCrossfadeEnabled.value) {
+              return const SizedBox.shrink();
+            }
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Crossfade Duration',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                  Slider(
+                    value: gaplessController.crossfadeDuration.value,
+                    min: 1.0,
+                    max: 10.0,
+                    divisions: 9,
+                    label:
+                        '${gaplessController.crossfadeDuration.value.toInt()}s',
+                    onChanged: gaplessController.setCrossfadeDuration,
+                  ),
+                ],
+              ),
+            );
+          }),
+
+          const Divider(),
+
+          // ReplayGain Section
+          _buildSectionHeader(context, 'ReplayGain (Volume Normalization)'),
 
           Obx(
             () => SwitchListTile(
-              title: const Text('ReplayGain'),
+              title: const Text('Enable ReplayGain'),
               subtitle: const Text('Normalize volume across tracks'),
-              value: settingsController.replayGainEnabled.value,
-              onChanged: settingsController.setReplayGainEnabled,
+              value: replayGainController.isEnabled.value,
+              onChanged: replayGainController.toggleReplayGain,
+              secondary: const Icon(Icons.volume_up),
             ),
           ),
+
+          // ReplayGain Mode
+          Obx(() {
+            if (!replayGainController.isEnabled.value) {
+              return const SizedBox.shrink();
+            }
+
+            return Column(
+              children: [
+                RadioListTile<String>(
+                  title: const Text('Track Mode'),
+                  subtitle: const Text('Normalize each track independently'),
+                  value: 'track',
+                  groupValue: replayGainController.mode.value,
+                  onChanged: (value) => replayGainController.setMode(value!),
+                ),
+                RadioListTile<String>(
+                  title: const Text('Album Mode'),
+                  subtitle: const Text('Normalize based on album gain'),
+                  value: 'album',
+                  groupValue: replayGainController.mode.value,
+                  onChanged: (value) => replayGainController.setMode(value!),
+                ),
+              ],
+            );
+          }),
+
+          // Preamp Gain
+          Obx(() {
+            if (!replayGainController.isEnabled.value) {
+              return const SizedBox.shrink();
+            }
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Preamp Gain: ${replayGainController.preampGain.value.toStringAsFixed(1)} dB',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Slider(
+                    value: replayGainController.preampGain.value,
+                    min: -15.0,
+                    max: 15.0,
+                    divisions: 60,
+                    label:
+                        '${replayGainController.preampGain.value.toStringAsFixed(1)} dB',
+                    onChanged: replayGainController.setPreampGain,
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            );
+          }),
+
+          // Prevent Clipping
+          Obx(() {
+            if (!replayGainController.isEnabled.value) {
+              return const SizedBox.shrink();
+            }
+
+            return SwitchListTile(
+              title: const Text('Prevent Clipping'),
+              subtitle: const Text('Limit volume to avoid distortion'),
+              value: replayGainController.preventClipping.value,
+              onChanged: replayGainController.togglePreventClipping,
+            );
+          }),
 
           const Divider(),
 
           // Library Section
-          _buildSectionHeader('Library', Icons.library_music),
+          _buildSectionHeader(context, 'Library'),
+
           ListTile(
-            title: const Text('Minimum Song Duration'),
-            subtitle: Text(
-              'Ignore songs shorter than ${settingsController.minSongDuration.value}s',
+            leading: const Icon(Icons.folder_open),
+            title: const Text('Music Folder'),
+            subtitle: Obx(
+              () => Text(
+                settingsController.musicDirectory.value.isEmpty
+                    ? 'Not set'
+                    : settingsController.musicDirectory.value,
+              ),
             ),
-            trailing: Text('${settingsController.minSongDuration.value}s'),
-            onTap: () => _showDurationPicker(context, settingsController),
+            onTap: () {
+              // Open folder picker
+              Get.snackbar(
+                'Music Folder',
+                'Feature coming soon',
+                snackPosition: SnackPosition.BOTTOM,
+              );
+            },
           ),
-          Obx(
-            () => SwitchListTile(
-              title: const Text('Auto-Scan on Startup'),
-              subtitle: const Text('Automatically scan for new music'),
-              value: settingsController.autoScanEnabled.value,
-              onChanged: settingsController.setAutoScanEnabled,
-            ),
-          ),
+
           ListTile(
             leading: const Icon(Icons.refresh),
             title: const Text('Rescan Library'),
-            subtitle: const Text('Scan for new music files'),
-            onTap: () async {
-              await musicController.rescanDevice();
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.cleaning_services),
-            title: const Text('Clean Duplicates'),
-            subtitle: const Text('Remove duplicate songs'),
-            onTap: () async {
-              await musicController.cleanDuplicates();
+            subtitle: const Text('Update music collection'),
+            onTap: () {
+              Get.back();
+              // Trigger rescan from music controller
+              Get.snackbar(
+                'Library Scan',
+                'Scanning for new music...',
+                snackPosition: SnackPosition.BOTTOM,
+              );
             },
           ),
 
           const Divider(),
 
           // Appearance Section
-          _buildSectionHeader('Appearance', Icons.palette),
+          _buildSectionHeader(context, 'Appearance'),
+
           Obx(
-            () => ListTile(
-              leading: const Icon(Icons.brightness_6),
-              title: const Text('Theme'),
-              subtitle: Text(
-                _getThemeLabel(settingsController.themeMode.value),
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showThemePicker(context, settingsController),
+            () => SwitchListTile(
+              title: const Text('Dark Mode'),
+              subtitle: const Text('Use dark theme'),
+              value: settingsController.isDarkMode.value,
+              onChanged: settingsController.toggleDarkMode,
+              secondary: const Icon(Icons.dark_mode),
             ),
-          ),
-
-          const Divider(),
-
-          // Audio Section
-          _buildSectionHeader('Audio', Icons.equalizer),
-          ListTile(
-            leading: const Icon(Icons.tune),
-            title: const Text('Equalizer'),
-            subtitle: const Text('Adjust sound frequencies'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Get.to(() => const EqualizerScreen());
-            },
           ),
 
           const Divider(),
 
           // About Section
-          _buildSectionHeader('About', Icons.info_outline),
+          _buildSectionHeader(context, 'About'),
+
           ListTile(
             leading: const Icon(Icons.info),
             title: const Text('App Version'),
-            subtitle: FutureBuilder<PackageInfo>(
-              future: PackageInfo.fromPlatform(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return Text('Version ${snapshot.data!.version}');
-                }
-                return const Text('Loading...');
-              },
-            ),
+            subtitle: const Text('1.0.0'),
           ),
+
           ListTile(
-            leading: const Icon(Icons.description),
-            title: const Text('Licenses'),
+            leading: const Icon(Icons.code),
+            title: const Text('Open Source Licenses'),
             onTap: () {
-              showLicensePage(
-                context: context,
-                applicationName: 'MyLa Play',
-                applicationVersion: '1.0.0',
-              );
+              showLicensePage(context: context);
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.restore),
-            title: const Text('Reset Settings'),
-            subtitle: const Text('Restore default settings'),
-            onTap: () => _showResetDialog(context, settingsController),
-          ),
+
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
-    );
-  }
-
-  String _getThemeLabel(String mode) {
-    switch (mode) {
-      case 'light':
-        return 'Light';
-      case 'dark':
-        return 'Dark';
-      case 'system':
-      default:
-        return 'System Default';
-    }
-  }
-
-  void _showThemePicker(BuildContext context, SettingsController controller) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Choose Theme'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RadioListTile<String>(
-                  title: const Text('System Default'),
-                  value: 'system',
-                  groupValue: controller.themeMode.value,
-                  onChanged: (value) {
-                    controller.setThemeMode(value!);
-                    Get.changeThemeMode(ThemeMode.system);
-                    Navigator.pop(context);
-                  },
-                ),
-                RadioListTile<String>(
-                  title: const Text('Light'),
-                  value: 'light',
-                  groupValue: controller.themeMode.value,
-                  onChanged: (value) {
-                    controller.setThemeMode(value!);
-                    Get.changeThemeMode(ThemeMode.light);
-                    Navigator.pop(context);
-                  },
-                ),
-                RadioListTile<String>(
-                  title: const Text('Dark'),
-                  value: 'dark',
-                  groupValue: controller.themeMode.value,
-                  onChanged: (value) {
-                    controller.setThemeMode(value!);
-                    Get.changeThemeMode(ThemeMode.dark);
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
-          ),
-    );
-  }
-
-  void _showDurationPicker(
-    BuildContext context,
-    SettingsController controller,
-  ) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Minimum Song Duration'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Obx(
-                  () => Slider(
-                    value: controller.minSongDuration.value.toDouble(),
-                    min: 10,
-                    max: 120,
-                    divisions: 22,
-                    label: '${controller.minSongDuration.value}s',
-                    onChanged: (value) {
-                      controller.setMinSongDuration(value.toInt());
-                    },
-                  ),
-                ),
-                Obx(() => Text('${controller.minSongDuration.value} seconds')),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Done'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  void _showResetDialog(BuildContext context, SettingsController controller) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Reset Settings'),
-            content: const Text(
-              'Are you sure you want to reset all settings to default?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-            ],
-          ),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:myla_play/screens/lyrics_screen.dart';
 import '../controllers/music_player_controller.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -13,16 +14,20 @@ class PlayerScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[900],
       appBar: AppBar(
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.lyrics),
+            tooltip: 'Lyrics',
+            onPressed: () => Get.to(() => const LyricsScreen()),
+          ),
+        ],
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
           onPressed: () => Get.back(),
         ),
-        title: const Text(
-          'Now Playing',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text('Now Playing', style: TextStyle(color: Colors.white)),
         centerTitle: true,
       ),
       body: Obx(() {
@@ -49,7 +54,9 @@ class PlayerScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.3),
                       blurRadius: 30,
                       spreadRadius: 5,
                     ),
@@ -78,20 +85,14 @@ class PlayerScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     song.artist,
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 18,
-                    ),
+                    style: TextStyle(color: Colors.grey[400], fontSize: 18),
                     textAlign: TextAlign.center,
                   ),
                   if (song.album != null) ...[
                     const SizedBox(height: 4),
                     Text(
                       song.album!,
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[500], fontSize: 14),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -101,30 +102,41 @@ class PlayerScreen extends StatelessWidget {
               // Progress Bar
               Column(
                 children: [
-                  Obx(() => Slider(
-                        value: controller.position.value.inSeconds.toDouble(),
-                        max: controller.duration.value.inSeconds.toDouble() > 0
-                            ? controller.duration.value.inSeconds.toDouble()
-                            : 1.0,
-                        onChanged: (value) {
-                          controller.seek(Duration(seconds: value.toInt()));
-                        },
-                        activeColor: Theme.of(context).colorScheme.primary,
-                        inactiveColor: Colors.grey[700],
-                      )),
+                  Obx(
+                    () => Slider(
+                      value: controller.position.value.inSeconds.toDouble(),
+                      max:
+                          controller.duration.value.inSeconds.toDouble() > 0
+                              ? controller.duration.value.inSeconds.toDouble()
+                              : 1.0,
+                      onChanged: (value) {
+                        controller.seek(Duration(seconds: value.toInt()));
+                      },
+                      activeColor: Theme.of(context).colorScheme.primary,
+                      inactiveColor: Colors.grey[700],
+                    ),
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Obx(() => Text(
-                              controller.formatDuration(controller.position.value),
-                              style: TextStyle(color: Colors.grey[400]),
-                            )),
-                        Obx(() => Text(
-                              controller.formatDuration(controller.duration.value),
-                              style: TextStyle(color: Colors.grey[400]),
-                            )),
+                        Obx(
+                          () => Text(
+                            controller.formatDuration(
+                              controller.position.value,
+                            ),
+                            style: TextStyle(color: Colors.grey[400]),
+                          ),
+                        ),
+                        Obx(
+                          () => Text(
+                            controller.formatDuration(
+                              controller.duration.value,
+                            ),
+                            style: TextStyle(color: Colors.grey[400]),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -136,16 +148,19 @@ class PlayerScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   // Shuffle
-                  Obx(() => IconButton(
-                        icon: Icon(
-                          Icons.shuffle,
-                          color: controller.isShuffleEnabled.value
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.grey[400],
-                        ),
-                        iconSize: 28,
-                        onPressed: controller.toggleShuffle,
-                      )),
+                  Obx(
+                    () => IconButton(
+                      icon: Icon(
+                        Icons.shuffle,
+                        color:
+                            controller.isShuffleEnabled.value
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.grey[400],
+                      ),
+                      iconSize: 28,
+                      onPressed: controller.toggleShuffle,
+                    ),
+                  ),
 
                   // Previous
                   IconButton(
@@ -155,29 +170,31 @@ class PlayerScreen extends StatelessWidget {
                   ),
 
                   // Play/Pause
-                  Obx(() => Container(
-                        width: 70,
-                        height: 70,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [
-                              Theme.of(context).colorScheme.primary,
-                              Theme.of(context).colorScheme.secondary,
-                            ],
-                          ),
+                  Obx(
+                    () => Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(context).colorScheme.primary,
+                            Theme.of(context).colorScheme.secondary,
+                          ],
                         ),
-                        child: IconButton(
-                          icon: Icon(
-                            controller.isPlaying.value
-                                ? Icons.pause
-                                : Icons.play_arrow,
-                            color: Colors.white,
-                          ),
-                          iconSize: 40,
-                          onPressed: controller.togglePlayPause,
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          controller.isPlaying.value
+                              ? Icons.pause
+                              : Icons.play_arrow,
+                          color: Colors.white,
                         ),
-                      )),
+                        iconSize: 40,
+                        onPressed: controller.togglePlayPause,
+                      ),
+                    ),
+                  ),
 
                   // Next
                   IconButton(
@@ -239,11 +256,7 @@ class PlayerScreen extends StatelessWidget {
     return Container(
       color: Colors.grey[800],
       child: const Center(
-        child: Icon(
-          Icons.music_note,
-          size: 100,
-          color: Colors.white54,
-        ),
+        child: Icon(Icons.music_note, size: 100, color: Colors.white54),
       ),
     );
   }

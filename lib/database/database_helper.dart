@@ -75,7 +75,12 @@ class DatabaseHelper {
         trackNumber $intType,
         year $intType,
         albumArtist TEXT,
-        isFavorite $intType DEFAULT 0
+        isFavorite $intType DEFAULT 0,
+        composer TEXT,
+        comment TEXT,
+        bitrate $intType,
+        sampleRate $intType,
+        fileSize $intType
       )
     ''');
 

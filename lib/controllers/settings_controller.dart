@@ -10,7 +10,7 @@ class SettingsController extends GetxController {
   // Library Settings
   final RxInt minSongDuration = 30.obs;
   final RxBool autoScanEnabled = false.obs;
-
+  final RxString musicDirectory = ''.obs;
   // Appearance Settings
   final RxString themeMode = 'system'.obs;
   final RxBool showMiniPlayer = true.obs;
@@ -30,6 +30,23 @@ class SettingsController extends GetxController {
     autoScanEnabled.value = prefs.getBool('autoScan') ?? false;
     themeMode.value = prefs.getString('themeMode') ?? 'system';
     showMiniPlayer.value = prefs.getBool('showMiniPlayer') ?? true;
+  }
+
+  // Add these missing methods
+  RxBool get isDarkMode {
+    return (themeMode.value == 'dark').obs;
+  }
+
+  Future<void> toggleDarkMode(bool value) async {
+    themeMode.value = value ? 'dark' : 'light';
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('themeMode', themeMode.value);
+  }
+
+  Future<void> setMusicDirectory(String path) async {
+    musicDirectory.value = path;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('musicDirectory', path);
   }
 
   Future<void> setGaplessPlayback(bool value) async {

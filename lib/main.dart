@@ -1,13 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:audio_service/audio_service.dart';
 import 'package:myla_play/controllers/equalizer_controller.dart';
+import 'package:myla_play/controllers/gapless_playback_controller.dart';
 import 'package:myla_play/controllers/music_player_controller.dart';
+import 'package:myla_play/controllers/replay_gain_controller.dart';
 import 'package:myla_play/controllers/settings_controller.dart';
+import 'package:myla_play/controllers/sleep_timer_controller.dart';
 import 'package:myla_play/screens/home_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Audio Service before running the app
+  await _initAudioService();
+
   runApp(const MusicPlayerApp());
+}
+
+Future<void> _initAudioService() async {
+  try {
+    await AudioService.init(
+      builder: () => AudioPlayerHandler(), // You'll need to create this
+      config: AudioServiceConfig(
+        androidNotificationChannelId: 'com.example.myla_play.audio',
+        androidNotificationChannelName: 'MyLa Play',
+        androidNotificationOngoing: true,
+        androidStopForegroundOnPause: false,
+        preloadArtwork: true,
+      ),
+    );
+  } catch (e) {
+    print('Error initializing audio service: $e');
+  }
 }
 
 class MusicPlayerApp extends StatelessWidget {
@@ -53,7 +78,11 @@ class _AppInitializerState extends State<AppInitializer> {
 
   Future<void> _initializeApp() async {
     // Initialize the MusicPlayerController
+    Get.put(GaplessPlaybackController());
+    Get.put(ReplayGainController());
+    print("gapless playback controller initialized");
     Get.put(MusicPlayerController());
+    Get.put(SleepTimerController());
 
     // Load existing songs from database (no permission needed)
     final controller = Get.find<MusicPlayerController>();
@@ -77,5 +106,30 @@ class _AppInitializerState extends State<AppInitializer> {
   @override
   Widget build(BuildContext context) {
     return const HomeScreen();
+  }
+}
+
+// You'll need to create this AudioPlayerHandler class
+class AudioPlayerHandler extends BaseAudioHandler {
+  // Implement the required methods for audio_service
+  // This is a basic implementation - you'll need to expand it based on your needs
+
+  AudioPlayerHandler() {
+    // Initialize your audio player here
+  }
+
+  @override
+  Future<void> play() async {
+    // Implement play functionality
+  }
+
+  @override
+  Future<void> pause() async {
+    // Implement pause functionality
+  }
+
+  @override
+  Future<void> stop() async {
+    // Implement stop functionality
   }
 }

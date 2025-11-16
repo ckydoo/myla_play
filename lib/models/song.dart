@@ -12,6 +12,11 @@ class Song {
   final int? year;
   final String? albumArtist;
   bool isFavorite;
+  final String? composer;
+  final String? comment;
+  final int? bitrate;
+  final int? sampleRate;
+  final int? fileSize;
 
   Song({
     this.id,
@@ -27,6 +32,11 @@ class Song {
     this.year,
     this.albumArtist,
     this.isFavorite = false,
+    this.composer,
+    this.comment,
+    this.bitrate,
+    this.sampleRate,
+    this.fileSize,
   }) : addedDate = addedDate ?? DateTime.now();
 
   // Convert Song to Map for database
