@@ -15,35 +15,47 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
   int _currentIndex = 0;
 
   MyAudioHandler() {
+    // Initialize player
     _init();
   }
 
   Future<void> _init() async {
-    // Step 1: Create equalizer FIRST
-    _equalizer = AndroidEqualizer();
-    await _equalizer.setEnabled(false);
+    try {
+      // Setup player listeners
+      _player.playbackEventStream.listen((event) {
+        playbackState.add(
+          playbackState.value.copyWith(
+            playing: _player.playing,
+            updatePosition: _player.position,
+          ),
+        );
+      });
+    } catch (e) {
+      print('Error initializing audio handler: $e');
+    }
+  }
 
-    // Step 2: Create player with equalizer in pipeline
-    _player = AudioPlayer(
-      audioPipeline: AudioPipeline(androidAudioEffects: [_equalizer]),
-    );
+  @override
+  Future<void> play() => _player.play();
 
-    // Step 3: Get equalizer parameters (after audio source is loaded)
-    _player.playerStateStream.listen((state) async {
-      if (state.processingState == ProcessingState.ready && _eqParams == null) {
-        _eqParams = await _equalizer.parameters;
-      }
+  @override
+  Future<void> pause() => _player.pause();
 
-      // Auto-next
-      if (state.processingState == ProcessingState.completed) {
-        skipToNext();
-      }
-    });
+  @override
+  Future<void> stop() => _player.stop();
 
-    // Listen to player events
-    _player.playbackEventStream.listen(_broadcastState);
-    _player.positionStream.listen(
-      (position) => _broadcastState(_player.playbackEvent),
+  // Global initialization function
+  late MyAudioHandler audioHandler;
+
+  Future<void> initAudioService() async {
+    audioHandler = await AudioService.init(
+      builder: () => MyAudioHandler(),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.example.myla_play.audio',
+        androidNotificationChannelName: 'MyLa Play',
+        androidNotificationOngoing: true,
+        androidStopForegroundOnPause: true,
+      ),
     );
   }
 
@@ -115,23 +127,6 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
   }
 
   // ========== PLAYBACK CONTROLS ==========
-
-  @override
-  Future<void> play() async {
-    await _player.play();
-  }
-
-  @override
-  Future<void> pause() async {
-    await _player.pause();
-  }
-
-  @override
-  Future<void> stop() async {
-    await _player.stop();
-    await _player.dispose();
-    await super.stop();
-  }
 
   @override
   Future<void> seek(Duration position) async {
