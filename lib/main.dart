@@ -8,31 +8,12 @@ import 'package:myla_play/controllers/replay_gain_controller.dart';
 import 'package:myla_play/controllers/settings_controller.dart';
 import 'package:myla_play/controllers/sleep_timer_controller.dart';
 import 'package:myla_play/screens/home_screen.dart';
+import 'package:myla_play/services/audio_handler.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Audio Service before running the app
-  await _initAudioService();
-
   runApp(const MusicPlayerApp());
-}
-
-Future<void> _initAudioService() async {
-  try {
-    await AudioService.init(
-      builder: () => AudioPlayerHandler(), // You'll need to create this
-      config: AudioServiceConfig(
-        androidNotificationChannelId: 'com.example.myla_play.audio',
-        androidNotificationChannelName: 'MyLa Play',
-        androidNotificationOngoing: true,
-        androidStopForegroundOnPause: false,
-        preloadArtwork: true,
-      ),
-    );
-  } catch (e) {
-    print('Error initializing audio service: $e');
-  }
 }
 
 class MusicPlayerApp extends StatelessWidget {

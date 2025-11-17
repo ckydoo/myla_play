@@ -41,11 +41,10 @@ class MusicPlayerController extends GetxController {
           androidNotificationChannelId: 'com.example.myla_play.audio',
           androidNotificationChannelName: 'MyLa Play',
           androidNotificationChannelDescription: 'Music playback controls',
-          androidNotificationOngoing: true,
-          androidNotificationIcon:
-              'mipmap/ic_launcher', // Ensure this path matches your app's icon resource
+          androidNotificationOngoing: false,
+          androidNotificationIcon: 'mipmap/ic_launcher',
           androidShowNotificationBadge: true,
-          androidStopForegroundOnPause: false,
+          androidStopForegroundOnPause: true,
         ),
       );
 

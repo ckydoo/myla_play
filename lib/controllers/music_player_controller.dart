@@ -49,7 +49,8 @@ class MusicPlayerController extends GetxController {
       config: const AudioServiceConfig(
         androidNotificationChannelId: 'com.myla.play.audio',
         androidNotificationChannelName: 'MyLa Play',
-        androidNotificationOngoing: true,
+        androidNotificationOngoing: false,
+        androidStopForegroundOnPause: true,
       ),
     );
 
